@@ -112,30 +112,46 @@ function degToRad(deg) {
 	return deg * (Math.PI / 180);
 }
 
-var oneDegree = degToRad(0.2);
+function insideMaxRotate() {
+	console.debug(camera.rotation.z);
+	return camera.rotation.z >= -0.3 && camera.rotation.z <= 0.3;
+}
 
 function updateControls() {
-	if (left) {
-		camera.position.x -= 0.5;
-		camera.rotation.z += oneDegree;
-		driver.rotation.z += oneDegree;
-	} else if (right) {
-		camera.position.x += 0.5;
-		camera.rotation.z -= oneDegree;
-		driver.rotation.z -= oneDegree;
-	} else {
+	let oneDegree = degToRad(0.2);
+	if (!left && !right) {
 		if (Math.abs(camera.rotation.z) <= oneDegree) {
 			camera.rotation.z = 0;
 			driver.rotation.z = 0;
-		} else {
+		}
+		else {
 			if (camera.rotation.z >= oneDegree) {
 				camera.rotation.z = camera.rotation.z - oneDegree;
 				driver.rotation.z = driver.rotation.z - oneDegree;
-			} else if (camera.rotation.z <= oneDegree) {
+			}
+			else if (camera.rotation.z <= oneDegree) {
 				camera.rotation.z = camera.rotation.z + oneDegree;
 				driver.rotation.z = driver.rotation.z + oneDegree;
 			}
 		}
+	}
+	else if (left && !right && insideMaxRotate()) {
+		camera.rotation.z += oneDegree;
+		if (!insideMaxRotate()) {
+			camera.rotation.z -= oneDegree;
+			return;
+		}
+		camera.position.x -= 0.5;
+		driver.rotation.z += oneDegree;
+	}
+	else if (right && !left && insideMaxRotate()) {
+		camera.rotation.z -= oneDegree;
+		if (!insideMaxRotate()) {
+			camera.rotation.z += oneDegree;
+			return;
+		}
+		camera.position.x += 0.5;
+		driver.rotation.z -= oneDegree;
 	}
 }
 
