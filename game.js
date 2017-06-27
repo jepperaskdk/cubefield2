@@ -179,16 +179,6 @@ var pointText = document.querySelector('#points');
 var levelText = document.querySelector('#level');
 var fpsText = document.querySelector('#fps');
 var start = new Date(), end = new Date(), FPS, startTime, endTime;
-// var levels = { 1: {
-	// speed: 1,
-	// material : new THREE.MeshLambertMaterial({ color: 0xCC0000 })
-// }, 2: {
-	// speed: 1.5,
-	// material: new THREE.MeshLambertMaterial({ color: 0x00CC00 })
-// }, 3: {
-	// speed: 2.5,
-	// material: new THREE.MeshLambertMaterial({ color: 0x0000CC })
-// } };
 
 function getLevelProperties(level) {
 	if (typeof(level) == "undefined") {
@@ -296,6 +286,7 @@ function UpdateKey(key, up) {
 			currentLevel = 1;
 			init();
 			camera.position.z = 0;
+			camera.rotation.z = 0;
 			driver.position.z = 0;
 			gamePaused = false;
 			gamePlaying = true;
