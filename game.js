@@ -112,9 +112,9 @@ function degToRad(deg) {
 	return deg * (Math.PI / 180);
 }
 
-function insideMaxRotate() {
-	console.debug(camera.rotation.z);
-	return camera.rotation.z >= -0.3 && camera.rotation.z <= 0.3;
+function outsideMaxRotate(offset) {
+	let rot = camera.rotation.z + offset;
+	return rot < -0.3 || rot > 0.3;
 }
 
 function updateControls() {
@@ -135,22 +135,22 @@ function updateControls() {
 			}
 		}
 	}
-	else if (left && !right && insideMaxRotate()) {
-		camera.rotation.z += oneDegree;
-		if (!insideMaxRotate()) {
-			camera.rotation.z -= oneDegree;
+	else if (left && !right) {
+		camera.position.x -= 0.5;
+		if (outsideMaxRotate(oneDegree)) {
 			return;
 		}
-		camera.position.x -= 0.5;
+		
+		camera.rotation.z += oneDegree;
 		driver.rotation.z += oneDegree;
 	}
-	else if (right && !left && insideMaxRotate()) {
-		camera.rotation.z -= oneDegree;
-		if (!insideMaxRotate()) {
-			camera.rotation.z += oneDegree;
+	else if (right && !left) {
+		camera.position.x += 0.5;
+		if (outsideMaxRotate(-oneDegree)) {
 			return;
 		}
-		camera.position.x += 0.5;
+		
+		camera.rotation.z -= oneDegree;
 		driver.rotation.z -= oneDegree;
 	}
 }
