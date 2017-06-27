@@ -16,8 +16,7 @@ const NEAR = 0.9;
 const FAR = 10000;
 
 const container = document.querySelector('#container');
-//const renderer = new THREE.WebGLRenderer({antialiasing: true});
-const renderer = new THREE.CanvasRenderer({antialiasing: true});
+const renderer = new THREE.WebGLRenderer({antialiasing: true});
 const camera = new THREE.PerspectiveCamera(VIEW_ANGLE,ASPECT,NEAR,FAR);
 const scene = new THREE.Scene();
 
