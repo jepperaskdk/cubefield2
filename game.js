@@ -69,7 +69,7 @@ scene.add(driver);
 function createSquare() {
 	var sq = new THREE.Mesh(
 		new THREE.BoxGeometry(SQUARELENGTH, SQUARELENGTH, SQUARELENGTH / 3, SEGMENTS, SEGMENTS, SEGMENTS),
-		levels[1].material
+		getLevelProperties().material
 	);
 	sq.position.z = 1000;
 	//sq.position.y = (SQUARELENGTH / 2);
@@ -94,7 +94,7 @@ function cleanSquares() {
 			sq.position.z = camera.position.z - 200 - (Math.random() * 100);
 			var rndX = getRandomFloat(-1.0, 1.0);
 			sq.position.x = camera.position.x + (rndX * 600);
-			sq.material = levels[currentLevel].material;
+			sq.material = getLevelProperties().material;
 		}
 	}
 	squareArray.forEach(cleanSquare);
@@ -160,18 +160,52 @@ function collisionDetection() {
 
 var speedText = document.querySelector('#speed');
 var pointText = document.querySelector('#points');
+var levelText = document.querySelector('#level');
 var fpsText = document.querySelector('#fps');
 var start = new Date(), end = new Date(), FPS, startTime, endTime;
-var levels = { 1: {
-	speed: 1,
-	material : new THREE.MeshLambertMaterial({ color: 0xCC0000 })
-}, 2: {
-	speed: 1.5,
-	material: new THREE.MeshLambertMaterial({ color: 0x00CC00 })
-}, 3: {
-	speed: 2.5,
-	material: new THREE.MeshLambertMaterial({ color: 0x0000CC })
-} };
+// var levels = { 1: {
+	// speed: 1,
+	// material : new THREE.MeshLambertMaterial({ color: 0xCC0000 })
+// }, 2: {
+	// speed: 1.5,
+	// material: new THREE.MeshLambertMaterial({ color: 0x00CC00 })
+// }, 3: {
+	// speed: 2.5,
+	// material: new THREE.MeshLambertMaterial({ color: 0x0000CC })
+// } };
+
+function getLevelProperties(level) {
+	if (typeof(level) == "undefined") {
+		level = currentLevel;
+	}
+	
+	switch (level) {
+		case 1:
+			return {
+				speed: 1,
+				material : new THREE.MeshLambertMaterial({ color: 0xCC0000 }),
+				nextLevelDistance: 1000
+			};
+		case 2:
+			return {
+				speed: 1.5,
+				material: new THREE.MeshLambertMaterial({ color: 0x00CC00 }),
+				nextLevelDistance: 5000
+			};
+		case 3:
+			return {
+				speed: 2.5,
+				material: new THREE.MeshLambertMaterial({ color: 0x0000CC }),
+				nextLevelDistance: 25000
+			};
+		default: 
+			return {
+				speed: 0.5 * level,
+				material: new THREE.MeshLambertMaterial({color: (level * 20 << 16) + (level * 20 << 8)}),
+				nextLevelDistance: level * 5000
+			};
+	}
+}
 
 var specialEvent = false;
 var specialEventInit = false;
@@ -196,8 +230,8 @@ function update() {
 	startTime = start.getTime();
 	if (!gamePlaying) return;
 	if (gamePaused) return;
-	camera.position.z -= speed;
-	distance += speed;
+	camera.position.z -= getLevelProperties().speed;
+	distance += getLevelProperties().speed;
 	
 	updateControls();
 	if (specialEvent) {
@@ -216,16 +250,14 @@ function update() {
 	// Schedule the next frame.
 	requestAnimationFrame(update);
 
-	if (speed !== levels[2].speed && distance > 1000 && distance < 5000) {
-		currentLevel = 2;
-		speed = levels[2].speed;
-	} else if (speed !== levels[3].speed && distance > 5000 && distance < 25000) {
-		currentLevel = 3;
-		speed = levels[3].speed;
+	if (getLevelProperties().nextLevelDistance < distance) {
+		currentLevel++;
 	}
 
-	speedText.innerHTML = speed;
+	speedText.innerHTML = getLevelProperties().speed;
 	pointText.innerHTML = distance;
+	levelText.innerHTML = currentLevel;
+	
 	endTime = end.getTime();
 	FPS = Math.round((1000 - (endTime - startTime)) * (60 / 1000));
 	fpsText.innerHTML = FPS;
@@ -245,7 +277,7 @@ function UpdateKey(key, up) {
 		case "h":
 			squareArray = [];
 			distance = 0;
-			speed = 1;
+			currentLevel = 1;
 			init();
 			camera.position.z = 0;
 			driver.position.z = 0;
