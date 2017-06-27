@@ -1,3 +1,4 @@
+
 var gamePlaying = true;
 var gamePaused = false;
 var speed = 1;
@@ -54,7 +55,7 @@ camera.position.y = 10;
 camera.position.z = 50;
 camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-const numSquares = 100;
+const numSquares = 200;
 const SQUARELENGTH = 5;
 var squareArray = [];
 
@@ -71,17 +72,32 @@ function createSquare() {
 		new THREE.BoxGeometry(SQUARELENGTH, SQUARELENGTH, SQUARELENGTH / 3, SEGMENTS, SEGMENTS, SEGMENTS),
 		getLevelProperties().material
 	);
-	sq.position.z = 1000;
+	sq.position.z = 300;
 	//sq.position.y = (SQUARELENGTH / 2);
 	return sq;
 }
 
 function init() {
+	squareArray.forEach(function(sq) {
+		scene.remove(sq);
+	});
+	
+	squareArray = [];
+	distance = 0;
+	currentLevel = 1;
+	
 	for (var i = 0; i < numSquares; i++) {
 		var sq = createSquare();
 		scene.add(sq);
 		squareArray.push(sq);
 	}
+	
+	camera.position.z = 0;
+	camera.rotation.z = 0;
+	driver.position.z = 0;
+	driver.rotation.z = 0;
+	gamePaused = false;
+	gamePlaying = true;
 }
 
 function getRandomFloat(min, max) {
@@ -91,7 +107,7 @@ function getRandomFloat(min, max) {
 function cleanSquares() {
 	function cleanSquare(sq) {
 		if (sq.position.z > camera.position.z) {
-			sq.position.z = camera.position.z - 200 - (Math.random() * 100);
+			sq.position.z = camera.position.z - 500 - (Math.random() * 500);
 			var rndX = getRandomFloat(-1.0, 1.0);
 			sq.position.x = camera.position.x + (rndX * 600);
 			sq.material = getLevelProperties().material;
@@ -178,7 +194,12 @@ var speedText = document.querySelector('#speed');
 var pointText = document.querySelector('#points');
 var levelText = document.querySelector('#level');
 var fpsText = document.querySelector('#fps');
-var start = new Date(), end = new Date(), FPS, startTime, endTime;
+var FPS = 0, lastTimestamp = 0;
+var lastFrame = -1;
+
+function nextColor(multiplier) {
+	return multiplier * 20 << 16;
+}
 
 function getLevelProperties(level) {
 	if (typeof(level) == "undefined") {
@@ -186,29 +207,29 @@ function getLevelProperties(level) {
 	}
 	
 	switch (level) {
-		case 1:
-			return {
-				speed: 1,
-				material : new THREE.MeshLambertMaterial({ color: 0xCC0000 }),
-				nextLevelDistance: 1000
-			};
-		case 2:
-			return {
-				speed: 1.5,
-				material: new THREE.MeshLambertMaterial({ color: 0x00CC00 }),
-				nextLevelDistance: 5000
-			};
-		case 3:
-			return {
-				speed: 2.5,
-				material: new THREE.MeshLambertMaterial({ color: 0x0000CC }),
-				nextLevelDistance: 25000
-			};
+		// case 1:
+			// return {
+				// speed: 1,
+				// material : new THREE.MeshLambertMaterial({ color: 0xCC0000 }),
+				// nextLevelDistance: 1000
+			// };
+		// case 2:
+			// return {
+				// speed: 1.5,
+				// material: new THREE.MeshLambertMaterial({ color: 0x00CC00 }),
+				// nextLevelDistance: 5000
+			// };
+		// case 3:
+			// return {
+				// speed: 2.5,
+				// material: new THREE.MeshLambertMaterial({ color: 0x0000CC }),
+				// nextLevelDistance: 15000
+			// };
 		default: 
 			return {
-				speed: 0.5 * level,
-				material: new THREE.MeshLambertMaterial({color: (level * 20 << 16) + (level * 20 << 8)}),
-				nextLevelDistance: level * 5000
+				speed: level * 2,
+				material: new THREE.MeshLambertMaterial({color: nextColor(level)}),
+				nextLevelDistance: Math.pow(level, 1.5) * 2000
 			};
 	}
 }
@@ -232,75 +253,69 @@ function specialEventF() {
 	specialEventInit = true;
 }
 
-function update() {
-	startTime = start.getTime();
-	if (!gamePlaying) return;
-	if (gamePaused) return;
-	camera.position.z -= getLevelProperties().speed;
-	distance += getLevelProperties().speed;
-	
-	updateControls();
-	if (specialEvent) {
-		if (!specialEventInit) {
-			specialEventF();
+function update(timestamp) {
+	if (gamePlaying && !gamePaused) {
+		camera.position.z -= getLevelProperties().speed;
+		distance += getLevelProperties().speed;
+		
+		updateControls();
+		if (specialEvent) {
+			if (!specialEventInit) {
+				specialEventF();
+			}
+		} else {
+			cleanSquares();
 		}
-	} else {
-		cleanSquares();
+		updatePositions();
+
+		collisionDetection();
+		// Draw!
+		renderer.render(scene, camera);
+
+		if (getLevelProperties().nextLevelDistance < distance) {
+			currentLevel++;
+		}
+		
+		speedText.innerHTML = getLevelProperties().speed;
+		pointText.innerHTML = distance;
+		levelText.innerHTML = currentLevel;
+		
+		FPS = 1000 / (timestamp - lastTimestamp);
+		fpsText.innerHTML = FPS;
+		lastTimestamp = timestamp;
 	}
-	updatePositions();
-
-	collisionDetection();
-	// Draw!
-	renderer.render(scene, camera);
-
-	// Schedule the next frame.
-	requestAnimationFrame(update);
-
-	if (getLevelProperties().nextLevelDistance < distance) {
-		currentLevel++;
-	}
-
-	speedText.innerHTML = getLevelProperties().speed;
-	pointText.innerHTML = distance;
-	levelText.innerHTML = currentLevel;
 	
-	endTime = end.getTime();
-	FPS = Math.round((1000 - (endTime - startTime)) * (60 / 1000));
-	fpsText.innerHTML = FPS;
+	// Schedule the next frame.
+	lastFrame = requestAnimationFrame(update);
 }
 
-function UpdateKey(key, up) {
+function UpdateKey(key, down) {
 	switch (key) {
 		case "a":
-			left = up ? false : true;
+			left = down;
 			break;
 		case "d":
-			right = up ? false : true;
+			right = down;
 			break;
 		case "p":
-			gamePaused = !gamePaused;
+			if (down) {
+				gamePaused = !gamePaused;
+			}
 			break;
 		case "h":
-			squareArray = [];
-			distance = 0;
-			currentLevel = 1;
-			init();
-			camera.position.z = 0;
-			camera.rotation.z = 0;
-			driver.position.z = 0;
-			gamePaused = false;
-			gamePlaying = true;
-			requestAnimationFrame(update);
-			break;
-		default:
+			if (down) {
+				window.cancelAnimationFrame(lastFrame);
+				init();
+				lastFrame = requestAnimationFrame(update);
+			}
 			break;
 	}
 }
 
 var body = document.querySelector('body');
 body.onkeydown = function (e) {
-	UpdateKey(e.key, false);
+	UpdateKey(e.key, true);
 };
 body.onkeyup = function (e) {
-	UpdateKey(e.key, true);
+	UpdateKey(e.key, false);
 };
